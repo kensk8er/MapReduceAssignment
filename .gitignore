@@ -1,0 +1,20 @@
+build
+cloud9.jar
+etc/junit.*
+etc/run.*
+docs/api
+docs/regression-results
+*~
+
+# custom
+.classpath
+.gitattributes
+.idea
+.metadata
+.project
+.settings
+build.xml
+data
+docs
+lib
+out
