@@ -18,3 +18,5 @@ data
 docs
 lib
 out
+export
+.DS_Store
