@@ -16,23 +16,13 @@
 
 package edu.umd.cloud9.examples;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.StringTokenizer;
-
+import edu.umd.cloud9.io.PairOfWritables;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 
-import edu.umd.cloud9.io.PairOfWritables;
+import java.io.*;
+import java.util.*;
 
 public class AnalyzeBigramCount {
 	public static void main(String[] args) {
@@ -61,18 +51,22 @@ public class AnalyzeBigramCount {
 			});
 
 			int singletons = 0;
+            int doubletons = 0;
 			int sum = 0;
 			for (PairOfWritables<Text, IntWritable> bigram : bigrams) {
 				sum += bigram.getRightElement().get();
 
 				if (bigram.getRightElement().get() == 1) {
 					singletons++;
-				}
+				} else if (bigram.getRightElement().get() == 2) {
+                    doubletons++;
+                }
 			}
 
 			System.out.println("total number of unique bigrams: " + bigrams.size());
 			System.out.println("total number of bigrams: " + sum);
 			System.out.println("number of bigrams that appear only once: " + singletons);
+            System.out.println("number of bigrams that appear only twice: " + doubletons);
 
 			System.out.println("\nten most frequent bigrams: ");
 
@@ -81,10 +75,11 @@ public class AnalyzeBigramCount {
 				System.out.println(bigram.getLeftElement() + "\t" + bigram.getRightElement());
 				cnt++;
 
-				if (cnt >= 10) {
+				if (cnt >= 20) {
 					break;
 				}
 			}
+
 		} catch (IOException e) {
 			System.err.println("Couldn't load folder: " + args[0]);
 		}
@@ -122,9 +117,20 @@ public class AnalyzeBigramCount {
 			// iterate through every line in the file
 			while ((rLine = results.readLine()) != null) {
 				rToken = new StringTokenizer(rLine);
+                int tokenNum = rToken.countTokens();
 				// extract the meaningful information
-				firstWord = rToken.nextToken();
-				secondWord = rToken.nextToken();
+                if (tokenNum == 3) {
+                    firstWord = rToken.nextToken();
+                    secondWord = rToken.nextToken();
+                } else if (tokenNum == 2) {
+                    firstWord = "";
+                    secondWord = rToken.nextToken();
+                } else {
+                    firstWord = "";
+                    secondWord = "";
+                    System.out.println("invalid token numbers");
+                    System.exit(-1);
+                }
 				count = rToken.nextToken();
 
 				bigrams.add(new PairOfWritables<Text, IntWritable>(new Text(firstWord + " "
