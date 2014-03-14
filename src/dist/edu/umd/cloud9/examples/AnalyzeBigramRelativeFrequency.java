@@ -16,26 +16,13 @@
 
 package edu.umd.cloud9.examples;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-
-import edu.umd.cloud9.io.SequenceFileUtils;
 import edu.umd.cloud9.io.PairOfStrings;
 import edu.umd.cloud9.io.PairOfWritables;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
+
+import java.io.*;
+import java.util.*;
 
 public class AnalyzeBigramRelativeFrequency {
 	public static void main(String[] args) {
@@ -46,71 +33,126 @@ public class AnalyzeBigramRelativeFrequency {
 
 		System.out.println("input path: " + args[0]);
 
-//		 List<PairOfWritables<PairOfStrings, FloatWritable>> pairs =
-//		 SequenceFileUtils.readDirectory(new Path(args[0]));
 		List<PairOfWritables<PairOfStrings, FloatWritable>> pairs;
 		try {
 			pairs = readDirectory(new Path(args[0]));
 
 			List<PairOfWritables<PairOfStrings, FloatWritable>> list1 = new ArrayList<PairOfWritables<PairOfStrings, FloatWritable>>();
 			List<PairOfWritables<PairOfStrings, FloatWritable>> list2 = new ArrayList<PairOfWritables<PairOfStrings, FloatWritable>>();
+            List<PairOfWritables<PairOfStrings, FloatWritable>> list3 = new ArrayList<PairOfWritables<PairOfStrings, FloatWritable>>();
+
+            Float probability1 = 0.0032f; // given value
+            Float probability2 = 0.0f;
+            Float probability3 = 0.0f;
+            Float probability4 = 0.0f;
 
 			for (PairOfWritables<PairOfStrings, FloatWritable> p : pairs) {
 				PairOfStrings bigram = p.getLeftElement();
 
-				if (bigram.getLeftElement().equals("light")) {
+				if (bigram.getLeftElement().equals("romeo")) {
 					list1.add(p);
 				}
-				if (bigram.getLeftElement().equals("contain")) {
+				if (bigram.getLeftElement().equals("is")) {
 					list2.add(p);
 				}
+                if (bigram.getLeftElement().equals("the")) {
+                    list3.add(p);
+                }
 			}
 
-			Collections.sort(list1,
-					new Comparator<PairOfWritables<PairOfStrings, FloatWritable>>() {
-						public int compare(PairOfWritables<PairOfStrings, FloatWritable> e1,
-								PairOfWritables<PairOfStrings, FloatWritable> e2) {
-							if (e1.getRightElement().compareTo(e2.getRightElement()) == 0) {
-								return e1.getLeftElement().compareTo(e2.getLeftElement());
-							}
+            // sort for romeo
+            Collections.sort(list1,
+                    new Comparator<PairOfWritables<PairOfStrings, FloatWritable>>() {
+                        public int compare(PairOfWritables<PairOfStrings, FloatWritable> e1,
+                                           PairOfWritables<PairOfStrings, FloatWritable> e2) {
+                            if (e1.getRightElement().compareTo(e2.getRightElement()) == 0) {
+                                return e1.getLeftElement().compareTo(e2.getLeftElement());
+                            }
 
-							return e2.getRightElement().compareTo(e1.getRightElement());
-						}
-					});
+                            return e2.getRightElement().compareTo(e1.getRightElement());
+                        }
+                    });
 
-			int i = 0;
-			for (PairOfWritables<PairOfStrings, FloatWritable> p : list1) {
-				PairOfStrings bigram = p.getLeftElement();
-				System.out.println(bigram + "\t" + p.getRightElement());
-				i++;
+            int i = 0;
+            Boolean doneLoop = false;
+            for (PairOfWritables<PairOfStrings, FloatWritable> p : list1) {
+                PairOfStrings bigram = p.getLeftElement();
+                System.out.println(bigram + "\t" + p.getRightElement());
+                i++;
 
-				if (i > 10) {
-					break;
-				}
-			}
+                if (bigram.getRightElement().equals("is")) {
+                    probability2 = Float.valueOf(p.getRightElement().toString());
+                    doneLoop = true;
+                }
 
-			Collections.sort(list2,
-					new Comparator<PairOfWritables<PairOfStrings, FloatWritable>>() {
-						public int compare(PairOfWritables<PairOfStrings, FloatWritable> e1,
-								PairOfWritables<PairOfStrings, FloatWritable> e2) {
-							if (e1.getRightElement().compareTo(e2.getRightElement()) == 0) {
-								return e1.getLeftElement().compareTo(e2.getLeftElement());
-							}
+                if (i > 5) {
+                    if (doneLoop == true) {
+                        break;
+                    }
+                }
+            }
 
-							return e2.getRightElement().compareTo(e1.getRightElement());
-						}
-					});
+            Collections.sort(list2,
+                    new Comparator<PairOfWritables<PairOfStrings, FloatWritable>>() {
+                        public int compare(PairOfWritables<PairOfStrings, FloatWritable> e1,
+                                           PairOfWritables<PairOfStrings, FloatWritable> e2) {
+                            if (e1.getRightElement().compareTo(e2.getRightElement()) == 0) {
+                                return e1.getLeftElement().compareTo(e2.getLeftElement());
+                            }
 
-			i = 0;
-			for (PairOfWritables<PairOfStrings, FloatWritable> p : list2) {
-				PairOfStrings bigram = p.getLeftElement();
-				System.out.println(bigram + "\t" + p.getRightElement());
-				i++;
+                            return e2.getRightElement().compareTo(e1.getRightElement());
+                        }
+                    });
 
-				if (i > 10) {
-					break;
-				}
-			}
+            i = 0;
+            doneLoop = false;
+            for (PairOfWritables<PairOfStrings, FloatWritable> p : list2) {
+                PairOfStrings bigram = p.getLeftElement();
+                i++;
+
+                if (bigram.getRightElement().equals("the")) {
+                    probability3 = Float.valueOf(p.getRightElement().toString());
+                    doneLoop = true;
+                }
+                if (doneLoop == true) {
+                    break;
+                }
+            }
+
+            Collections.sort(list3,
+                    new Comparator<PairOfWritables<PairOfStrings, FloatWritable>>() {
+                        public int compare(PairOfWritables<PairOfStrings, FloatWritable> e1,
+                                           PairOfWritables<PairOfStrings, FloatWritable> e2) {
+                            if (e1.getRightElement().compareTo(e2.getRightElement()) == 0) {
+                                return e1.getLeftElement().compareTo(e2.getLeftElement());
+                            }
+
+                            return e2.getRightElement().compareTo(e1.getRightElement());
+                        }
+                    });
+
+            i = 0;
+            doneLoop = false;
+            for (PairOfWritables<PairOfStrings, FloatWritable> p : list3) {
+                PairOfStrings bigram = p.getLeftElement();
+                i++;
+
+                if (bigram.getRightElement().equals("king")) {
+                    probability4 = Float.valueOf(p.getRightElement().toString());
+                    doneLoop = true;
+                }
+                if (doneLoop == true) {
+                    break;
+                }
+            }
+
+            System.out.println("\np(romeo) = " + probability1);
+            System.out.println("p(is|romeo) = " + probability2);
+            System.out.println("p(the|is) = " + probability3);
+            System.out.println("p(king|the) = " + probability4 + "\n");
+            System.out.println("Bigram probability of \"romeo is the king\" is: "
+                    + probability1 * probability2 * probability3 * probability4);
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
